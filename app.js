@@ -21,8 +21,7 @@ app.get('/', (req, res) => {
 // products route: mount the productsRouter at path 'api/v1/products'
 app.use('/api/v1/products', productsRouter);
 
-// app.use() for error handlers applied on any routes that are not specified as above
-app.use(notFoundMiddleware);
+app.use(notFoundMiddleware); // app.use() for not found error: applied on any routes that are not specified as above
 app.use(errorMiddleware);
 
 const start = async () => {
