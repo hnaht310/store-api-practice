@@ -29,7 +29,7 @@ const getAllProductsStatic = async (req, res) => {
 // in Mongoose V6: /v1/products?featured=true <- returns 7 hits,
 // in Mongoose V6: /v1/products?featured=true&page=2&foo=bar <- also returns 7 hits because it ignores foo and page because these two are not in the schema
 
-const getAllProducts = async (req, res) => {
+const getAllProducts1 = async (req, res) => {
   console.log(req.query); // eg: {featured: 'true'} or { name: 'john', featured: 'true' }
   //   const products = await Product.find(req.query); // req.query is already an object so we don't need to add {}
   const { featured, company, name, sort, fields, numericFilters } = req.query; // we just pull out what property we're interested in from the req.query
@@ -104,9 +104,9 @@ const getAllProducts = async (req, res) => {
   res.status(200).json({ products, nbHits: products.length });
 };
 
-const getAllProducts1 = async (req, res) => {
+const getAllProducts = async (req, res) => {
   console.log(req.query);
-  const { featured, company, name, sort, fields } = req.query;
+  const { featured, company, name, sort, fields, numericFilters } = req.query;
   const queryObject = {};
   // featured
   if (featured) {
@@ -120,6 +120,36 @@ const getAllProducts1 = async (req, res) => {
   if (name) {
     queryObject.name = { $regex: name, $options: 'i' };
   }
+
+  if (numericFilters) {
+    console.log(numericFilters); // prints 'price>30,rating>=4'
+    const operatorMap = {
+      '>': '$gt',
+      '>=': '$gte',
+      '=': '$eq',
+      '<': '$lt',
+      '<=': '$lte',
+    };
+    // need to change operators > >=, etc to $gt. $gte, etc
+    // need to change to this format: price: {$gte: 30} then add it to queryObject
+    // queryObject should be in this format: { company: 'ikea', price: { '$gt': 30 }, rating: { '$gte': 4 } }
+    const regEx = /\b(<|>|>=|=|<|<=)\b/g;
+    // the function (2nd parameter of replace()) will be invoked each time there's a match in the filters array
+    let filters = numericFilters.replace(
+      regEx,
+      (match) => `-${operatorMap[match]}-`
+    );
+    console.log(filters); // prints 'price-$gt-30,rating-$gte-4'
+    const options = ['price', 'rating'];
+    filters.split(',').forEach((item) => {
+      const [field, operator, value] = item.split('-');
+      // console.log(field); // prints price rating
+      if (options.includes(field)) {
+        queryObject[field] = { [operator]: Number(value) };
+      }
+    });
+  }
+
   console.log(queryObject);
   let result = product.find(queryObject);
 
