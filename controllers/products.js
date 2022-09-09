@@ -1,7 +1,4 @@
-const { query } = require('express');
-const product = require('../models/product');
 const Product = require('../models/product'); // import Product model/schema
-const { search } = require('../routes/products');
 
 const getAllProductsStatic = async (req, res) => {
   //   const products = await Product.find({}); // find all documents
